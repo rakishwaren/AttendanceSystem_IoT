@@ -8,6 +8,25 @@
 #include <Keypad.h>
 #include <ArduinoJson.h>
 
+// Variables
+// I/O Sensors and Switches
+#define DOOR_RELAY      0
+
+// Command Light
+#define LED_GREEN       22
+#define LED_YELLOW      21
+#define LED_RED         19
+
+// TFT Screen SPI I/O
+#define TFT_CS        5
+#define TFT_DC        2
+#define TFT_MOSI      23
+#define TFT_SCLK      18
+#define TFT_RST       4
+
+// Buzzer
+#define BUZZER        15
+
 // Constants: Device Identity
 const String dev_name     = "NFC Punch Card Device";
 const String dev_serial   = "nfc_vendor0001&dev00001";
@@ -33,15 +52,7 @@ const int LCD_ROWS      = 2;
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, KEY_ROWS, KEY_COLS);
 
 // LCD Declaration (CS | DC | MOSI | SCK | RST)
-Adafruit_ST7735 tft = Adafruit_ST7735(5, 2, 23, 18, 4);
-
-// I/O Sensors and Switches
-#define DOOR_RELAY      0
-
-// Command Light
-#define LED_GREEN       22
-#define LED_YELLOW      21
-#define LED_RED         19
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 // Multi-Threading Task Handles & Properties
 TaskHandle_t handle_Task1, handle_Task2;
@@ -93,6 +104,7 @@ void setup() {
   pinMode(LED_YELLOW, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(DOOR_RELAY, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
 
   digitalWrite(LED_GREEN, LOW);
   digitalWrite(LED_YELLOW, LOW);
@@ -102,6 +114,8 @@ void setup() {
   keypad.addEventListener(keyPressEvent);
 
   tft.initR(INITR_144GREENTAB);
+
+  digitalWrite(BUZZER, HIGH);
 
   tft.fillScreen(ST77XX_BLACK);
 
@@ -120,6 +134,7 @@ void setup() {
   tft.println(dev_version);
 
   delay(2000);
+  digitalWrite(BUZZER, LOW);
 
   wifi_mgr();
 
@@ -859,9 +874,11 @@ bool checkTarget(){
 void keyPressEvent(KeypadEvent key){
   switch(keypad.getState()){
     case PRESSED:
+      digitalWrite(BUZZER, HIGH);
       break;
 
     case RELEASED:
+      digitalWrite(BUZZER, LOW);
       break;
 
     case HOLD:
